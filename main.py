@@ -11,7 +11,39 @@ pygame.display.set_caption("Grand Theft Zombie")
 clock = pygame.time.Clock()
 
 #images
-background = pygame.image.load("")
+background = pygame.transform.scale(pygame.image.load("game_map.png").convert(), (WIDTH, HEIGHT))
+
+class Player(pygame.sprite.Sprite):
+  def __init__(self):
+    super().__init__()
+    self.image = pygame.transform.rotozoom(pygame.image.load("zombie.png").convert_alpha(), 0, PLAYER_SIZE)
+    self.pos = pygame.math.Vector2(PLAYER_START_X, PLAYER_START_Y)
+    self.speed = PLAYER_SPEED
+
+  def user_input(self):
+    self.velocity_x = 0
+    self.velocity_y = 0
+
+  keys = pygame.key.get_pressed()
+
+  if keys[pygame.K_w]:
+    self.velocity_y = -self.speed
+  if keys[pygame.K_s]:
+    self.velocity_y = self.speed
+  if keys[pygame.K_d]:
+    self.velocity_x = self.speed
+  if keys[pygame.K_a]:
+    self.velocity_x = -self.speed
+
+  def move(self):
+    self.pos += pygame.math.Vector2(self.velocity_x, self.velocity_y)
+
+  def update(self):
+    self.user_input()
+    self.move()
+    
+
+player = Player()
 
 while True:
   keys = pygame.key.get_pressed()
@@ -19,4 +51,10 @@ while True:
     if event.type == pygame.QUIT:
       pygame.quit()
       exit()
-    
+
+  screen.blit(background, (0,0))
+  screen.blit(player.image, player.pos)
+  player.update
+
+  pygame.display.update()
+  clock.tick(FPS)
