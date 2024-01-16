@@ -16,11 +16,13 @@ background = pygame.transform.scale(pygame.image.load("game_map.png").convert(),
 player_image_original = pygame.image.load("player.png").convert_alpha()
 bullet_image_original = pygame.image.load("bullet.png").convert_alpha()
 zombie_image_original = pygame.image.load("zombie.png").convert_alpha()
+powerup_image_original = pygame.image.load("speedboost.png").convert_alpha()
 
 # Resize images
-player_image = pygame.transform.scale(player_image_original, (80, 80))  # Adjusted size for the player
+player_image = pygame.transform.scale(player_image_original, (100, 100))  # Adjusted player size
 bullet_image = pygame.transform.scale(bullet_image_original, (20, 10))
 zombie_image = pygame.transform.scale(zombie_image_original, (50, 50))
+powerup_image = pygame.transform.scale(powerup_image_original, (30, 30))
 
 # Flip the player image horizontally
 flipped_player_image = pygame.transform.flip(player_image, True, False)
@@ -49,6 +51,26 @@ waves_completed = 0
 # Set up health bar
 player_health = 100
 font = pygame.font.Font(None, 36)
+
+# Cooldown for collisions with zombies
+collision_cooldown = 30
+collision_timer = 0
+
+# Load power-up image
+powerup_image_original = pygame.image.load("speedboost.png").convert_alpha()
+powerup_image = pygame.transform.scale(powerup_image_original, (30, 30))
+
+# Power-up attributes
+powerup_rect = powerup_image.get_rect()
+powerup_active = False
+
+# Power-up cooldown
+powerup_cooldown = 30
+powerup_timer = 0
+
+# Score variables
+score = 0
+score_font = pygame.font.Font(None, 36)
 
 # Main game loop
 clock = pygame.time.Clock()
@@ -113,10 +135,10 @@ while waves_completed < total_waves and player_health > 0:
             zombies.append(zombie_rect)
 
     # Update zombie positions
-    for zombie_rect in zombies[:]:  # Iterate over a copy to allow removal in the loop
+    for zombie_rect in zombies[:]:
         zombie_vector = pygame.math.Vector2(player_rect.centerx - zombie_rect.centerx,
                                             player_rect.centery - zombie_rect.centery)
-        if zombie_vector.length() > 0:  # Add this check to avoid normalizing a zero-length vector
+        if zombie_vector.length() > 0:
             zombie_vector.normalize_ip()
             zombie_rect.x += zombie_vector.x * zombie_speed
             zombie_rect.y += zombie_vector.y * zombie_speed
@@ -127,10 +149,12 @@ while waves_completed < total_waves and player_health > 0:
 
     for bullet in bullets:
         bullet_rect, _ = bullet
-        for zombie_rect in zombies[:]:  # Iterate over a copy to allow removal in the loop
-            if bullet_rect.colliderect(zombie_rect):
+        for zombie_rect in zombies[:]:
+            # Adjust the size of the zombie hitbox
+            if bullet_rect.colliderect(zombie_rect.inflate(-10, -10)):  # Make the hitbox smaller by 10 pixels
                 bullets_to_remove.append(bullet)
                 zombies_to_remove.append(zombie_rect)
+                score += 5  # Increment the score for each killed zombie
 
     # Remove collided bullets
     bullets = [bullet for bullet in bullets if bullet not in bullets_to_remove]
@@ -141,19 +165,36 @@ while waves_completed < total_waves and player_health > 0:
     # Check for collisions between player and zombies
     for zombie_rect in zombies:
         if player_rect.colliderect(zombie_rect):
-            # Check if the player and zombie sprites are colliding
-            if player_rect.colliderect(zombie_rect):
-                # Decrease player health when hit by a zombie
+            if collision_timer <= 0:
                 player_health -= 10
                 print(f"Player Health: {player_health}")
+                collision_timer = collision_cooldown
+
+    # Decrease collision cooldown timer
+    if collision_timer > 0:
+        collision_timer -= 1
 
     # Rotate the player image with the correct anchor point and scale
     rotated_image = pygame.transform.rotozoom(flipped_player_image, angle, 0.2)
     rotated_rect = rotated_image.get_rect(center=player_rect.center)
 
+    # Spawn power-up once every wave
+    if waves_completed > 0 and len(zombies) == 0 and len(bullets) == 0 and powerup_timer <= 0:
+        powerup_rect.topleft = (random.randint(50, WIDTH - powerup_rect.width - 50), random.randint(50, HEIGHT - powerup_rect.height - 50))
+        powerup_active = True
+
+    # Check for collisions between player and power-up
+    if powerup_active and player_rect.colliderect(powerup_rect):
+        bullet_cooldown /= 2
+        powerup_active = False
+        powerup_timer = powerup_cooldown
+
+    # Decrease power-up cooldown timer
+    if powerup_timer > 0:
+        powerup_timer -= 1
+
     # Update screen
     screen.blit(background, (0, 0))
-    screen.blit(rotated_image, rotated_rect.topleft)
 
     # Draw bullets
     for bullet in bullets:
@@ -164,17 +205,28 @@ while waves_completed < total_waves and player_health > 0:
     for zombie_rect in zombies:
         screen.blit(zombie_image, zombie_rect.topleft)
 
+    # Draw power-up
+    if powerup_active:
+        screen.blit(powerup_image, powerup_rect.topleft)
+
+    # Draw rotated player image
+    screen.blit(rotated_image, rotated_rect.topleft)
+
     # Draw health bar
-    pygame.draw.rect(screen, (255, 0, 0), (10, 10, 200, 20))  # Draw the background of the health bar
-    pygame.draw.rect(screen, (0, 255, 0), (10, 10, player_health * 2, 20))  # Draw the filled part of the health bar
+    pygame.draw.rect(screen, (255, 0, 0), (10, 10, 200, 20))
+    pygame.draw.rect(screen, (0, 255, 0), (10, 10, player_health * 2, 20))
+
+    # Draw score
+    score_text = score_font.render(f"Score: {score}", True, (255, 255, 255))
+    screen.blit(score_text, (10, 40))
 
     pygame.display.update()
-    clock.tick(60)  # Limit frames per second
+    clock.tick(60)
 
-# Check if all zombies are defeated
-if not zombies and len(bullets) == 0:
-    waves_completed += 1
-    print(f"Wave {waves_completed} completed!")
+    # Check if all zombies are defeated
+    if len(zombies) == 0 and len(bullets) == 0:
+        waves_completed += 1
+        print(f"Wave {waves_completed} completed!")
 
 # Game over
 pygame.quit()
