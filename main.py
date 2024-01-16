@@ -1,5 +1,5 @@
 import pygame
-from pygame.locals import QUIT, KEYDOWN, K_ESCAPE, K_SPACE
+from pygame.locals import QUIT, KEYDOWN, K_ESCAPE, K_SPACE, MOUSEBUTTONDOWN
 from sys import exit
 import random
 
@@ -9,7 +9,7 @@ pygame.init()
 # Set up window
 WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Player Game")
+pygame.display.set_caption("Mankind's Expiration")
 
 # Load images
 background = pygame.transform.scale(pygame.image.load("game_map.png").convert(), (WIDTH, HEIGHT))
@@ -74,6 +74,32 @@ score_font = pygame.font.Font(None, 36)
 
 # Set the new damage value
 damage_taken = 5
+
+# Main menu loop
+menu_font = pygame.font.Font(None, 72)
+menu_title = menu_font.render("Mankind's Expiration", True, (255, 255, 255))
+menu_title_rect = menu_title.get_rect(center=(WIDTH // 2, HEIGHT // 4))
+play_button_font = pygame.font.Font(None, 48)
+play_button_text = play_button_font.render("Play", True, (255, 255, 255))
+play_button_rect = play_button_text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+
+menu_active = True
+
+while menu_active:
+    for event in pygame.event.get():
+        if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
+            pygame.quit()
+            exit()
+        if event.type == MOUSEBUTTONDOWN:
+            if play_button_rect.collidepoint(event.pos):
+                menu_active = False
+
+    screen.blit(background, (0, 0))
+    screen.blit(menu_title, menu_title_rect)
+    pygame.draw.rect(screen, (0, 0, 0), play_button_rect)
+    screen.blit(play_button_text, play_button_rect.topleft)
+
+    pygame.display.update()
 
 # Main game loop
 clock = pygame.time.Clock()
@@ -227,12 +253,17 @@ while not game_over:
         score_text = score_font.render(f"Score: {score}", True, (255, 255, 255))
         screen.blit(score_text, (10, 40))
 
+        # Display current wave count
+        wave_text = font.render(f"Wave: {wave}/{total_waves}", True, (255, 255, 255))
+        screen.blit(wave_text, (WIDTH - 150, 10))
+
         pygame.display.update()
         clock.tick(60)
 
         # Check if all zombies are defeated
         if len(zombies) == 0 and len(bullets) == 0:
             waves_completed += 1
+            wave += 1  # Increment wave count
             print(f"Wave {waves_completed} completed!")
 
     # Game over screen
@@ -266,6 +297,7 @@ while not game_over:
     bullets = []
     zombies = []
     waves_completed = 0
+    wave = 1  # Reset wave count
     score = 0
 
 # Game over
