@@ -46,10 +46,14 @@ zombies_per_wave = 2
 total_waves = 10
 waves_completed = 0
 
+# Set up health bar
+player_health = 100
+font = pygame.font.Font(None, 36)
+
 # Main game loop
 clock = pygame.time.Clock()
 
-while waves_completed < total_waves:
+while waves_completed < total_waves and player_health > 0:
     for event in pygame.event.get():
         if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
             pygame.quit()
@@ -134,6 +138,15 @@ while waves_completed < total_waves:
     # Remove collided zombies
     zombies = [zombie for zombie in zombies if zombie not in zombies_to_remove]
 
+    # Check for collisions between player and zombies
+    for zombie_rect in zombies:
+        if player_rect.colliderect(zombie_rect):
+            # Check if the player and zombie sprites are colliding
+            if player_rect.colliderect(zombie_rect):
+                # Decrease player health when hit by a zombie
+                player_health -= 10
+                print(f"Player Health: {player_health}")
+
     # Rotate the player image with the correct anchor point and scale
     rotated_image = pygame.transform.rotozoom(flipped_player_image, angle, 0.2)
     rotated_rect = rotated_image.get_rect(center=player_rect.center)
@@ -151,14 +164,18 @@ while waves_completed < total_waves:
     for zombie_rect in zombies:
         screen.blit(zombie_image, zombie_rect.topleft)
 
+    # Draw health bar
+    pygame.draw.rect(screen, (255, 0, 0), (10, 10, 200, 20))  # Draw the background of the health bar
+    pygame.draw.rect(screen, (0, 255, 0), (10, 10, player_health * 2, 20))  # Draw the filled part of the health bar
+
     pygame.display.update()
     clock.tick(60)  # Limit frames per second
 
-    # Check if all zombies are defeated
-    if not zombies and len(bullets) == 0:
-        waves_completed += 1
-        print(f"Wave {waves_completed} completed!")
+# Check if all zombies are defeated
+if not zombies and len(bullets) == 0:
+    waves_completed += 1
+    print(f"Wave {waves_completed} completed!")
 
-# Game over, exit the program
+# Game over
 pygame.quit()
 exit()
