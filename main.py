@@ -43,11 +43,13 @@ zombies = []
 wave = 1
 zombie_speed = 2
 zombies_per_wave = 2
+total_waves = 10
+waves_completed = 0
 
 # Main game loop
 clock = pygame.time.Clock()
 
-while True:
+while waves_completed < total_waves:
     for event in pygame.event.get():
         if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
             pygame.quit()
@@ -151,3 +153,12 @@ while True:
 
     pygame.display.update()
     clock.tick(60)  # Limit frames per second
+
+    # Check if all zombies are defeated
+    if not zombies and len(bullets) == 0:
+        waves_completed += 1
+        print(f"Wave {waves_completed} completed!")
+
+# Game over, exit the program
+pygame.quit()
+exit()
