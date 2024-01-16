@@ -3,6 +3,14 @@ from pygame.locals import QUIT, KEYDOWN, K_ESCAPE, K_SPACE, MOUSEBUTTONDOWN
 from sys import exit
 import random
 
+# Function to display the main menu
+def display_main_menu():
+    screen.blit(background, (0, 0))
+    screen.blit(menu_title, menu_title_rect)
+    pygame.draw.rect(screen, (0, 0, 0), play_button_rect)
+    screen.blit(play_button_text, play_button_rect.topleft)
+    pygame.display.update()
+
 # Initialize Pygame
 pygame.init()
 
@@ -94,16 +102,10 @@ while menu_active:
             if play_button_rect.collidepoint(event.pos):
                 menu_active = False
 
-    screen.blit(background, (0, 0))
-    screen.blit(menu_title, menu_title_rect)
-    pygame.draw.rect(screen, (0, 0, 0), play_button_rect)
-    screen.blit(play_button_text, play_button_rect.topleft)
-
-    pygame.display.update()
+    display_main_menu()
 
 # Main game loop
 clock = pygame.time.Clock()
-
 game_over = False
 
 while not game_over:
@@ -282,15 +284,8 @@ while not game_over:
     # Update the display
     pygame.display.update()
 
-    # Wait for a key press to exit or restart
-    waiting_for_key = True
-    while waiting_for_key:
-        for event in pygame.event.get():
-            if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
-                pygame.quit()
-                exit()
-            if event.type == KEYDOWN:
-                waiting_for_key = False
+    # Delay for 5 seconds before returning to the main menu
+    pygame.time.delay(5000)
 
     # Reset game variables for a new game
     player_health = 100
@@ -299,6 +294,9 @@ while not game_over:
     waves_completed = 0
     wave = 1  # Reset wave count
     score = 0
+
+    # Display main menu again
+    display_main_menu()
 
 # Game over
 pygame.quit()
